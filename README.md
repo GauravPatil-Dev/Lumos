@@ -1,9 +1,51 @@
-## What is Lumos?
-- Lumos takes market news and optional basic financials related to the specified company from the past few weeks as input and responds with the company's **positive developments** and **potential concerns**. Then it gives out a **prediction** of stock price movement for the coming week and its **analysis** summary.
-- Lumos is finetuned on Llama-2-7b-chat-hf with LoRA on the past year's DOW30 market data. But also has shown great generalization ability on other ticker symbols.
-
-
 Before you start, do `pip install -r requirements.txt`. Then you can refer to `demo.ipynb` for our deployment and evaluation script.
+
+
+# LoRA Model Training Lumos
+
+This project involves data preparation, training a model using LoRA (Low-Rank Adaptation), and evaluation. The project utilizes DeepSpeed for efficient distributed training. Lumos takes market news and optional basic financials related to the specified company from the past few weeks as input and responds with the company's **positive developments** and **potential concerns**. Then it gives out a **prediction** of stock price movement for the coming week and its **analysis** summary. Lumos is finetuned on Llama-2-7b-chat-hf with LoRA on the past year's DOW30 market data. But also has shown great generalization ability on other ticker symbols.
+
+## Table of Contents
+- [Overview](#overview)
+- [Requirements](#requirements)
+- [Setup](#setup)
+- [Data Preparation](#data-preparation)
+- [Training](#training)
+- [Evaluation](#evaluation)
+- [Usage](#usage)
+- [Acknowledgements](#acknowledgements)
+
+## Overview
+This project aims to train a model using the LoRA technique, which optimizes model parameters efficiently. The training process is enhanced with DeepSpeed for better performance on GPUs.
+
+## Requirements
+- Python 3.7 or higher
+- Git
+- Virtualenv (recommended)
+
+### Python Packages
+- torch==2.0.1
+- transformers==4.32.0
+- peft==0.5.0
+- pandas
+- yfinance
+- finnhub-python
+- nvidia-ml-py3
+
+## Setup
+
+1. **Clone the Repository**:
+   git clone git@github.com:GauravPatil-Dev/Lumos.git
+   cd your-repo-name
+
+## Create a Virtual Environment:
+
+    `python -m venv venv`
+    `source venv/bin/activate  # On Windows: venv\Scripts\activate`
+
+## Install Dependencies:
+    `pip install -r requirements.txt`
+
 
 ## Data Preparation
 Company profile & Market news & Basic financials & Stock prices are retrieved using **yfinance & finnhub**.
@@ -37,3 +79,11 @@ Based on all the information before {curday}, let's first analyze the positive d
 
 """
 ```
+
+## Configure Training:
+
+Ensure the `config.json` file is correctly set up for your training parameters.
+
+Run Training Script:
+Execute the train.sh script to start training:
+    `sh train.sh`

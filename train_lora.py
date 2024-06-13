@@ -24,11 +24,11 @@ from peft import (
     get_peft_model_state_dict,
     prepare_model_for_int8_training,
     set_peft_model_state_dict,   
-)
+) # LoRA imports for the model training process
 
 # Replace with your own api_key and project name
-os.environ['WANDB_API_KEY'] = ''    # TODO: Replace with your environment variable
-os.environ['WANDB_PROJECT'] = 'fingpt-forecaster'
+os.environ['WANDB_API_KEY'] = ''    # Replace with your environment variable
+os.environ['WANDB_PROJECT'] = 'lummos'
 
 
 class GenerationEvalCallback(TrainerCallback):
@@ -37,6 +37,9 @@ class GenerationEvalCallback(TrainerCallback):
         self.eval_dataset = eval_dataset
         self.ignore_until_epoch = ignore_until_epoch
     
+    """
+        Callback function to evaluate the model on the test dataset.
+    """
     def on_evaluate(self, args, state: TrainerState, control: TrainerControl, **kwargs):
         
         if state.epoch is None or state.epoch + 1 < self.ignore_until_epoch:
@@ -98,30 +101,30 @@ def main(args):
     
     # load data
     dataset_fname = "./data/" + args.dataset
-    dataset_list = load_dataset(dataset_fname, args.from_remote)
+    dataset_list = load_dataset(dataset_fname, args.from_remote) # list of datasets
     
     dataset_train = datasets.concatenate_datasets([d['train'] for d in dataset_list]).shuffle(seed=42)
     
     if args.test_dataset:
         test_dataset_fname = "./data/" + args.test_dataset
-        dataset_list = load_dataset(test_dataset_fname, args.from_remote)
+        dataset_list = load_dataset(test_dataset_fname, args.from_remote) # list of datasets
             
     dataset_test = datasets.concatenate_datasets([d['test'] for d in dataset_list])
     
     original_dataset = datasets.DatasetDict({'train': dataset_train, 'test': dataset_test})
     
-    eval_dataset = original_dataset['test'].shuffle(seed=42).select(range(50))
+    eval_dataset = original_dataset['test'].shuffle(seed=42).select(range(50)) # select 50 samples for evaluation
     
-    dataset = original_dataset.map(partial(tokenize, args, tokenizer))
+    dataset = original_dataset.map(partial(tokenize, args, tokenizer)) # tokenize the dataset
     print('original dataset length: ', len(dataset['train']))
-    dataset = dataset.filter(lambda x: not x['exceed_max_length'])
+    dataset = dataset.filter(lambda x: not x['exceed_max_length']) # filter out samples that exceed max_length
     print('filtered dataset length: ', len(dataset['train']))
     dataset = dataset.remove_columns(
         ['prompt', 'answer', 'label', 'symbol', 'period', 'exceed_max_length']
-    )
+    ) # remove unnecessary columns
     
     current_time = datetime.now()
-    formatted_time = current_time.strftime('%Y%m%d%H%M')
+    formatted_time = current_time.strftime('%Y%m%d%H%M') 
     
     training_args = TrainingArguments(
         output_dir=f'finetuned_models/{args.run_name}_{formatted_time}', # 保存位置
@@ -143,7 +146,7 @@ def main(args):
         remove_unused_columns=False,
         report_to='wandb',
         run_name=args.run_name
-    )
+    ) # training arguments for the model training process
     
     model.gradient_checkpointing_enable()
     model.enable_input_require_grads()
@@ -162,7 +165,7 @@ def main(args):
         lora_dropout=0.1,
         target_modules=lora_module_dict[args.base_model],
         bias='none',
-    )
+    ) # peft configuration for the model training process
     model = get_peft_model(model, peft_config)
     
     # Train
@@ -182,17 +185,23 @@ def main(args):
                 ignore_until_epoch=round(0.3 * args.num_epochs)
             )
         ]
-    )
+    ) # trainer for the model training process
     
     if torch.__version__ >= "2" and sys.platform != "win32":
         model = torch.compile(model)
     
-    torch.cuda.empty_cache()
-    trainer.train()
+    torch.cuda.empty_cache() # clear cache before training the model
+    trainer.train() # train the model
 
     # save model
-    model.save_pretrained(training_args.output_dir)
+    model.save_pretrained(training_args.output_dir) # save the model
 
+"""
+    Main function for training and fine-tuning a model using LoRA.
+    
+    Args:
+        args (argparse.Namespace): Command-line arguments passed.
+"""
 
 if __name__ == "__main__":
     
